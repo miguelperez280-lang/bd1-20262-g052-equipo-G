@@ -1,1 +1,14 @@
 
+*Utilización de herramientas de software para la gestión de bases de datos (SGBD): pgAdmin4 de PostgreSQL y SQL Server Studio
+Lenguaje de definición de bases de datos (DDL). (create. drop, truncate, rename)
+Creación de tablas (CREATE)
+Modificación de tablas (ALTER TABLE)
+Modificación de campos (ALTER COLUMN y Constrains)
+Constrains: CHECK, NOT NULL, PRIMARY KEY, FOREING KEY. UNIQUE KEY
+Datos Semi Estructurados (JSON y/o JSONB). 
+Preguntas de selección múltiple, apareamiento y enunciados con requerimientos para que Ud. aporte la solución.
+
+* 📄 *informe* [EA3. Unidad 2.  Examen / Tarea 3 - PA Fase #3)
+](https://docs.google.com/document/d/1HpcKWgd8ZMZeceWRY5GKe1D6mefnA3u-/edit?usp=sharing&ouid=115397579219829345712&rtpof=true&sd=true)
+* 📄 *excel* [Ver Informe en Google Docs](https://docs.google.com/spreadsheets/d/1u60C1qOxH4XJUuXYFzuyH2x2b5wefmyD/edit?usp=sharing&ouid=115397579219829345712&rtpof=true&sd=true)
+
