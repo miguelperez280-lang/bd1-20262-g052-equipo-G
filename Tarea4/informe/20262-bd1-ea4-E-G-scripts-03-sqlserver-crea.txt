@@ -4,7 +4,7 @@
 
 --
 -- Creación de las tablas
- 1. rol: permisos y accesos del sistema
+-- 1. rol: permisos y accesos del sistema
 CREATE TABLE rol (
     id_rol       SMALLINT      IDENTITY(1,1),
     nombre       VARCHAR(30)   NOT NULL,
