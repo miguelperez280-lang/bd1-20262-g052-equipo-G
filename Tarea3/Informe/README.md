@@ -1,7 +1,374 @@
 * 📄 *informe* [EA3. Unidad 2.  Examen / Tarea 3 - PA Fase #3
 ](https://docs.google.com/document/d/1HLcVuvmczb-ikvKBuAXqV1MS3Mh3lWR1ELWQFTdfXRc/edit?usp=sharing)
 * 📄 *excel* [correcion](https://docs.google.com/spreadsheets/d/1etXLlT4PFO5OfdJXJzmCmiy8HZFnkSkj/edit?usp=sharing&ouid=115397579219829345712&rtpof=true&sd=true)
+***codigo de la base de datos***
 
+  *BEGIN;
 
+/* ---------------------------------------------------------------------
+   TABLAS INDEPENDIENTES 
+   --------------------------------------------------------------------- */
+
+-- 1. rol: permisos y accesos del sistema
+CREATE TABLE rol (
+    id_rol       SMALLSERIAL,
+    nombre       VARCHAR(30)   	NOT NULL,
+    descripcion  VARCHAR(200),
+    CONSTRAINT pk_rol        	PRIMARY KEY (id_rol),
+    CONSTRAINT uq_rol_nombre 	UNIQUE (nombre)
+);
+
+-- 2. tipo_usuario: estudiante, docente, empleado, egresado, etc.
+CREATE TABLE tipo_usuario (
+    id_tipo_usuario  SMALLSERIAL,
+    nombre           VARCHAR(30)   	  NOT NULL,
+    descripcion      VARCHAR(200),
+    CONSTRAINT pk_tipo_usuario        PRIMARY KEY (id_tipo_usuario),
+    CONSTRAINT uq_tipo_usuario_nombre UNIQUE (nombre)
+);
+
+-- 3. programa: carreras, tecnologías, licenciaturas o posgrados
+CREATE TABLE programa (
+    id_programa      SERIAL,
+    nombre           VARCHAR(100)  NOT NULL,
+    facultad         VARCHAR(100)  NOT NULL,
+    nivel_formacion  VARCHAR(20)   NOT NULL,
+    CONSTRAINT pk_programa         PRIMARY KEY (id_programa),
+    CONSTRAINT uq_programa_nombre  UNIQUE (nombre),
+    CONSTRAINT ck_programa_nivel   CHECK (nivel_formacion IN
+        ('TECNICO', 'TECNOLOGIA', 'PROFESIONAL', 'POSGRADO'))
+);
+
+-- 4. tipo_servicio: asesorías, tutorías, monitorías, etc.
+CREATE TABLE tipo_servicio (
+    id_tipo_servicio  SMALLSERIAL,
+    nombre            VARCHAR(50)      NOT NULL,
+    descripcion       VARCHAR(200),
+    CONSTRAINT pk_tipo_servicio        PRIMARY KEY (id_tipo_servicio),
+    CONSTRAINT uq_tipo_servicio_nombre UNIQUE (nombre)
+);
+
+-- 5. tipo_producto: papelería, tecnología, libros, etc.
+CREATE TABLE tipo_producto (
+    id_tipo_producto  SMALLSERIAL,
+    nombre            VARCHAR(50)      NOT NULL,
+    descripcion       VARCHAR(200),
+    CONSTRAINT pk_tipo_producto        PRIMARY KEY (id_tipo_producto),
+    CONSTRAINT uq_tipo_producto_nombre UNIQUE (nombre)
+);
+
+-- 6. tipo_evento: académico, deportivo, cultural, hackatón, etc.
+CREATE TABLE tipo_evento (
+    id_tipo_evento  SMALLSERIAL,
+    nombre          VARCHAR(50)      NOT NULL,
+    descripcion     VARCHAR(200),
+    CONSTRAINT pk_tipo_evento        PRIMARY KEY (id_tipo_evento),
+    CONSTRAINT uq_tipo_evento_nombre UNIQUE (nombre)
+);
+
+/* ---------------------------------------------------------------------
+   TABLAS DEPENDIENTES DE CATÁLOGOS
+   --------------------------------------------------------------------- */
+
+-- 7. usuario: usuarios de la red pascualina
+CREATE TABLE usuario (
+    id_usuario       SERIAL,
+    id_rol           SMALLINT      NOT NULL,
+    id_tipo_usuario  SMALLINT      NOT NULL,
+    id_programa      INTEGER,
+    nombre           VARCHAR(60)   NOT NULL,
+    apellido         VARCHAR(60)   NOT NULL,
+    correo           VARCHAR(100)  NOT NULL,
+    contrasena_hash  VARCHAR(255)  NOT NULL,
+    fecha_registro   TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    activo           BOOLEAN       NOT NULL DEFAULT TRUE,
+    CONSTRAINT pk_usuario        PRIMARY KEY (id_usuario),
+    CONSTRAINT uq_usuario_correo UNIQUE (correo),
+    CONSTRAINT ck_usuario_correo CHECK (correo LIKE '%_@_%.__%'),
+    CONSTRAINT fk_usuario_rol
+    FOREIGN KEY (id_rol) REFERENCES rol (id_rol)
+	ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_usuario_tipo_usuario
+    FOREIGN KEY (id_tipo_usuario) REFERENCES tipo_usuario (id_tipo_usuario)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_usuario_programa
+    FOREIGN KEY (id_programa) REFERENCES programa (id_programa)
+    ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+/* ---------------------------------------------------------------------
+   TABLAS DEPENDIENTES DE usuario
+   --------------------------------------------------------------------- */
+
+-- 8. perfil: información del usuario (1:1 con usuario)
+CREATE TABLE perfil (
+    id_perfil         SERIAL,
+    id_usuario        INTEGER       NOT NULL,
+    biografia         VARCHAR(500),
+    foto_url          TEXT,
+    intereses         VARCHAR(200),
+    semestre          SMALLINT,
+    fecha_nacimiento  DATE,
+    CONSTRAINT pk_perfil          PRIMARY KEY (id_perfil),
+    CONSTRAINT uq_perfil_usuario  UNIQUE (id_usuario),
+    CONSTRAINT ck_perfil_semestre CHECK (semestre BETWEEN 1 AND 12),
+    CONSTRAINT fk_perfil_usuario
+    FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+	ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- 9. portafolio: repositorio de trabajos y proyectos (1:1 con usuario)
+CREATE TABLE portafolio (
+    id_portafolio   SERIAL,
+    id_usuario      INTEGER          NOT NULL,
+    titulo          VARCHAR(100)     NOT NULL,
+    descripcion     VARCHAR(500),
+    url_externa     TEXT,
+    fecha_creacion  TIMESTAMPTZ      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_portafolio         PRIMARY KEY (id_portafolio),
+    CONSTRAINT uq_portafolio_usuario UNIQUE (id_usuario),
+    CONSTRAINT fk_portafolio_usuario
+        FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- 10. grupo: espacios comunitarios (estudio, hackatón, clubes)
+CREATE TABLE grupo (
+    id_grupo            SERIAL,
+    id_usuario_creador  INTEGER       NOT NULL,
+    id_programa         INTEGER,
+    nombre              VARCHAR(80)   NOT NULL,
+    descripcion         VARCHAR(500),
+    fecha_creacion      TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_grupo        		  PRIMARY KEY (id_grupo),
+    CONSTRAINT uq_grupo_nombre        UNIQUE (nombre),
+    CONSTRAINT fk_grupo_usuario_creador
+    FOREIGN KEY (id_usuario_creador)  REFERENCES usuario (id_usuario)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_grupo_programa
+    FOREIGN KEY (id_programa) REFERENCES programa (id_programa)
+    ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+-- 11. servicio: prestaciones ofrecidas dentro de la red
+CREATE TABLE servicio (
+    id_servicio          SERIAL,
+    id_tipo_servicio     SMALLINT       NOT NULL,
+    id_usuario_oferente  INTEGER        NOT NULL,
+    nombre               VARCHAR(100)   NOT NULL,
+    descripcion          VARCHAR(500),
+    precio               NUMERIC(12,2)  NOT NULL DEFAULT 0,
+    activo               BOOLEAN        NOT NULL DEFAULT TRUE,
+    CONSTRAINT pk_servicio              PRIMARY KEY (id_servicio),
+    CONSTRAINT ck_servicio_precio       CHECK (precio >= 0),
+    CONSTRAINT fk_servicio_tipo_servicio
+    FOREIGN KEY (id_tipo_servicio) REFERENCES tipo_servicio (id_tipo_servicio)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_servicio_usuario_oferente
+    FOREIGN KEY (id_usuario_oferente) REFERENCES usuario (id_usuario)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+-- 12. producto: artículos que los usuarios compran o venden
+CREATE TABLE producto (
+    id_producto          SERIAL,
+    id_tipo_producto     SMALLINT       NOT NULL,
+    id_usuario_vendedor  INTEGER        NOT NULL,
+    nombre               VARCHAR(100)   NOT NULL,
+    descripcion          VARCHAR(500),
+    precio               NUMERIC(12,2)  NOT NULL,
+    stock                INTEGER        NOT NULL DEFAULT 1,
+    fecha_publicacion    TIMESTAMPTZ    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_producto        		PRIMARY KEY (id_producto),
+    CONSTRAINT ck_producto_precio 		CHECK (precio >= 0),
+    CONSTRAINT ck_producto_stock  		CHECK (stock >= 0),
+    CONSTRAINT fk_producto_tipo_producto
+    FOREIGN KEY (id_tipo_producto) REFERENCES tipo_producto (id_tipo_producto)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_producto_usuario_vendedor
+    FOREIGN KEY (id_usuario_vendedor) REFERENCES usuario (id_usuario)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+-- 13. evento: actividades que refuerzan la interacción entre programas
+CREATE TABLE evento (
+    id_evento               SERIAL,
+    id_tipo_evento          SMALLINT      NOT NULL,
+    id_usuario_organizador  INTEGER       NOT NULL,
+    id_programa             INTEGER,
+    titulo                  VARCHAR(100)  NOT NULL,
+    descripcion             VARCHAR(500),
+    lugar                   VARCHAR(100),
+    fecha_inicio            TIMESTAMPTZ   NOT NULL,
+    fecha_fin               TIMESTAMPTZ   NOT NULL,
+    cupo_maximo             INTEGER,
+    CONSTRAINT pk_evento        		  PRIMARY KEY (id_evento),
+    CONSTRAINT ck_evento_fechas 		  CHECK (fecha_fin >= fecha_inicio),
+    CONSTRAINT ck_evento_cupo   	      CHECK (cupo_maximo IS NULL OR cupo_maximo > 0),
+    CONSTRAINT fk_evento_tipo_evento
+    FOREIGN KEY (id_tipo_evento) REFERENCES tipo_evento (id_tipo_evento)
+	ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_evento_usuario_organizador
+	FOREIGN KEY (id_usuario_organizador) REFERENCES usuario (id_usuario)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_evento_programa
+	FOREIGN KEY (id_programa) REFERENCES programa (id_programa)
+    ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+/* ---------------------------------------------------------------------
+   TABLAS DEPENDIENTES 
+   --------------------------------------------------------------------- */
+
+-- 14. credencial: certificaciones/identificaciones asociadas al portafolio
+CREATE TABLE credencial (
+    id_credencial      SERIAL,
+    id_portafolio      INTEGER       NOT NULL,
+    nombre             VARCHAR(100)  NOT NULL,
+    entidad_emisora    VARCHAR(100)  NOT NULL,
+    codigo             VARCHAR(50),
+    fecha_emision      DATE          NOT NULL,
+    fecha_vencimiento  DATE,
+    url_verificacion   TEXT,
+    CONSTRAINT pk_credencial         PRIMARY KEY (id_credencial),
+    CONSTRAINT uq_credencial_codigo  UNIQUE (codigo),
+    CONSTRAINT ck_credencial_fechas  CHECK
+        (fecha_vencimiento IS NULL OR fecha_vencimiento >= fecha_emision),
+    CONSTRAINT fk_credencial_portafolio
+        FOREIGN KEY (id_portafolio) REFERENCES portafolio (id_portafolio)
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- 15. perfil_grupo: ficha descriptiva de cada grupo (1:1 con grupo)
+CREATE TABLE perfil_grupo (
+    id_perfil_grupo  SERIAL,
+    id_grupo         INTEGER       NOT NULL,
+    reglas           VARCHAR(500),
+    imagen_url       TEXT,
+    visibilidad      VARCHAR(10)   NOT NULL DEFAULT 'PUBLICO',
+    CONSTRAINT pk_perfil_grupo             PRIMARY KEY (id_perfil_grupo),
+    CONSTRAINT uq_perfil_grupo_grupo       UNIQUE (id_grupo),
+    CONSTRAINT ck_perfil_grupo_visibilidad CHECK (visibilidad IN ('PUBLICO', 'PRIVADO')),
+    CONSTRAINT fk_perfil_grupo_grupo
+    FOREIGN KEY (id_grupo) REFERENCES grupo (id_grupo)
+    ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- 16. usuario_grupo: tabla pivote usuario <-> grupo (M:N)
+CREATE TABLE usuario_grupo (
+    id_usuario        INTEGER      NOT NULL,
+    id_grupo          INTEGER      NOT NULL,
+    fecha_union       TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    es_administrador  BOOLEAN      NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_usuario_grupo PRIMARY KEY (id_usuario, id_grupo),
+    CONSTRAINT fk_usuario_grupo_usuario
+    FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+	ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_usuario_grupo_grupo
+    FOREIGN KEY (id_grupo) REFERENCES grupo (id_grupo)
+    ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- 17. usuario_servicio: tabla pivote usuario <-> servicio (M:N)
+CREATE TABLE usuario_servicio (
+    id_usuario        INTEGER      NOT NULL,
+    id_servicio       INTEGER      NOT NULL,
+    fecha_asignacion  TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado            VARCHAR(15)  NOT NULL DEFAULT 'SOLICITADO',
+    CONSTRAINT pk_usuario_servicio        PRIMARY KEY (id_usuario, id_servicio),
+    CONSTRAINT ck_usuario_servicio_estado CHECK
+        (estado IN ('SOLICITADO', 'EN_CURSO', 'FINALIZADO', 'CANCELADO')),
+    CONSTRAINT fk_usuario_servicio_usuario
+        FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_usuario_servicio_servicio
+        FOREIGN KEY (id_servicio) REFERENCES servicio (id_servicio)
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- 18. publicacion: información publicada por los usuarios
+CREATE TABLE publicacion (
+    id_publicacion     BIGSERIAL,
+    id_usuario         INTEGER      NOT NULL,
+    id_grupo           INTEGER,
+    id_programa        INTEGER,
+    contenido          TEXT         NOT NULL,
+    fecha_publicacion  TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_publicacion PRIMARY KEY (id_publicacion),
+    CONSTRAINT fk_publicacion_usuario
+    FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_publicacion_grupo
+    FOREIGN KEY (id_grupo) REFERENCES grupo (id_grupo)
+	ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_publicacion_programa
+    FOREIGN KEY (id_programa) REFERENCES programa (id_programa)
+    ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+-- 19. horario: agenda académica asociada a un programa (y opcionalmente a un evento)
+CREATE TABLE horario (
+    id_horario   SERIAL,
+    id_programa  INTEGER       NOT NULL,
+    id_evento    INTEGER,
+    dia_semana   SMALLINT      NOT NULL,
+    hora_inicio  TIME          NOT NULL,
+    hora_fin     TIME          NOT NULL,
+    materia      VARCHAR(100)  NOT NULL,
+    profesor     VARCHAR(100),
+    CONSTRAINT pk_horario      PRIMARY KEY (id_horario),
+    CONSTRAINT ck_horario_dia  CHECK (dia_semana BETWEEN 1 AND 7),
+    CONSTRAINT ck_horario_hora CHECK (hora_fin > hora_inicio),
+    CONSTRAINT fk_horario_programa
+    FOREIGN KEY (id_programa) REFERENCES programa (id_programa)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_horario_evento
+    FOREIGN KEY (id_evento) REFERENCES evento (id_evento)
+    ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+/* ---------------------------------------------------------------------
+   TABLAS DEPENDIENTES DE publicacion
+   --------------------------------------------------------------------- */
+
+-- 20. comentario: entidad débil, no existe sin su publicación
+CREATE TABLE comentario (
+    id_comentario     BIGSERIAL,
+    id_publicacion    BIGINT         NOT NULL,
+    id_usuario        INTEGER        NOT NULL,
+    contenido         VARCHAR(1000)  NOT NULL,
+    fecha_comentario  TIMESTAMPTZ    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_comentario PRIMARY KEY (id_comentario),
+    CONSTRAINT fk_comentario_publicacion
+    FOREIGN KEY (id_publicacion) REFERENCES publicacion (id_publicacion)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_comentario_usuario
+	FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+	ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- 21. reporte: denuncias generadas por usuarios sobre publicaciones
+CREATE TABLE reporte (
+    id_reporte      SERIAL,
+    id_usuario      INTEGER       NOT NULL,
+    id_publicacion  BIGINT        NOT NULL,
+    motivo          VARCHAR(50)   NOT NULL,
+    detalle         VARCHAR(500),
+    estado          VARCHAR(15)   NOT NULL DEFAULT 'PENDIENTE',
+    fecha_reporte   TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_reporte         PRIMARY KEY (id_reporte),
+    CONSTRAINT ck_reporte_estado  CHECK
+        (estado IN ('PENDIENTE', 'EN_REVISION', 'RESUELTO', 'DESCARTADO')),
+    CONSTRAINT fk_reporte_usuario
+        FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_reporte_publicacion
+        FOREIGN KEY (id_publicacion) REFERENCES publicacion (id_publicacion)
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+COMMIT; *
+
+-
 
 
