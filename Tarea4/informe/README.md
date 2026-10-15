@@ -8,4 +8,5 @@ Defensa individual o en grupo
 * 📄 **excel**[tipos de datos
   ](https://docs.google.com/spreadsheets/d/15fo1259iaWh_aGlYdhev-3TwWrsQGPQM/edit?usp=sharing&ouid=115397579219829345712&rtpof=true&sd=true)
 
-
+  ***video***
+[j](spreadsheets)
