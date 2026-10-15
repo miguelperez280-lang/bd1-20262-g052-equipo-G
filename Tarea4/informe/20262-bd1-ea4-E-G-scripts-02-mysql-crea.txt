@@ -1,8 +1,6 @@
 --
 -- Scripst de Creación de la Base de Datos - SGBD MySQL
 --
--- Todas las instrucciones se DEBEN EJECUTAR EN SECUENCIA SIN ERRORES
--- NOTA: Ojo con las tablas relacionadas. Primero las independientes y después las dependientes
 --
 
 --
