@@ -1,3 +1,5 @@
+USE dbt3;
+
 --
 -- Scripst de Creación de la Base de Datos - SGBD MySQL
 --
