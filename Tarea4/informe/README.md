@@ -9,4 +9,4 @@ Defensa individual o en grupo
   ](https://docs.google.com/spreadsheets/d/15fo1259iaWh_aGlYdhev-3TwWrsQGPQM/edit?usp=sharing&ouid=115397579219829345712&rtpof=true&sd=true)
 
   ***video***
-[20262-bd1-ea-equip o-G-video](https://youtu.be/S4kLA472294)
+[20262-bd1-ea-equip o-G-video](https://youtu.be/yTn-hn1Josc)
